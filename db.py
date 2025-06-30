@@ -21,5 +21,3 @@
 # for data in cursor:
 #     print(data[0], data[1])
 
-# a =  
-# print(type(a))
