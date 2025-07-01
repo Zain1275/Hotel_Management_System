@@ -1,4 +1,5 @@
 import os
+from db import get_connection
 
 class Customer: #**************************
     id =0 
@@ -31,7 +32,7 @@ class Manager:  #*********************************
 
 class Room: #***************************************
     id = 0 
-    type=  ""
+    type =  ""
     status = True
     cust_id = None
 
@@ -63,10 +64,11 @@ class Application:
     room_id = 0
     app_status = None
 
-    def __init__(self, apid, csid, rmid):
+    def __init__(self, apid, csid, rmid, app_status = None):
         self.app_id = apid
         self.cust_id=  csid
         self.room_id=  rmid
+        self.app_status = app_status
 
     def showApplication(self):
         print("---------------")
@@ -87,13 +89,13 @@ class HMS:
     Bookings=  []
     Applications = []
     def __init__(self):
-
-        self.Roomlist.append(Room(101, "A", True, None))
-        self.Roomlist.append(Room(102, "A", True, None))
-        self.Roomlist.append(Room(103, "A", True, None))
-        self.Roomlist.append(Room(104, "A", True, None))
-        self.Roomlist.append(Room(201, "B", True, None))
-        self.Roomlist.append(Room(202, "B", True, None))
+        pass 
+        # self.Roomlist.append(Room(101, "A", True, None))
+        # self.Roomlist.append(Room(102, "A", True, None))
+        # self.Roomlist.append(Room(103, "A", True, None))
+        # self.Roomlist.append(Room(104, "A", True, None))
+        # self.Roomlist.append(Room(201, "B", True, None))
+        # self.Roomlist.append(Room(202, "B", True, None))
 
     def RoomsDetail(self):
         os.system("cls")
@@ -155,6 +157,8 @@ class HMS:
                     return None, None
 
         print("Application Does not exist..!!")
+        return None, None
+
     
     def showbookings(self):
         print("BookingId  CustomerId  Room-No")
@@ -171,8 +175,8 @@ class HMS:
 
 def signIn(tlist):  # accessing old account 
     temp = input("Enter Username: ")
+    tempint= 0
     for m in tlist:
-        tempint= 0
         if m.name == temp:
             tempint = 1
             temp1 = input("Enter Password: ")
@@ -185,12 +189,12 @@ def signIn(tlist):  # accessing old account
             else:
                 print("Password is invalid..!!")
                 input("Press any key to continue..!!")
-                return False
+                return False , None, None
 
     if tempint == 0:
         print("User Not found..!!")
         input("Press any key to continue..!!")
-        return False
+        return False, None, None
 
 def signUpCustomer(t, tlist):  # account creation 
     temp = input("Enter name: ")
@@ -282,7 +286,101 @@ def login():
     ch = int(input("Enter Choice: "))
     return ch
 
+def onLoad(cursor, custlist, managlist, hms): # load all data from database to lists 
+
+    # getting customer data form database 
+    custlist.clear()
+    cursor.execute("SELECT * FROM Customer")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        custlist.append(Customer(row[0], row[1], row[2]))
+
+    # getting manager's data from database 
+    managlist.clear()
+    cursor.execute("SELECT * FROM Manager")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        managlist.append(Manager(row[0], row[1], row[2]))
+
+    # getting rooms data 
+    hms.Roomlist.clear()
+    cursor.execute("SELECT * FROM Room")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        hms.Roomlist.append(Room(row[0], row[1], row[2], row[3]))
+
+    # getting Applications data 
+    hms.Applications.clear()
+    cursor.execute("SELECT * FROM Applications")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        hms.Applications.append(Application(row[0], row[1], row[2], row[3]))
+
+    # getting Bookings data 
+    hms.Bookings.clear()
+    cursor.execute("SELECT * FROM Bookings")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        hms.Bookings.append(Booking(row[0], row[1], row[2]))
+
+    
+    
+
+
+def onExit(cursor, custlist, managlist, hms): # send data from lists to database 
+    
+
+    cursor.execute("delete from Bookings")
+    cursor.execute("delete from Applications")
+    cursor.execute("delete from Room")
+    cursor.execute("delete from Customer")
+    cursor.execute("delete from Manager")
+
+
+    # sending customer's data 
+    for c in custlist:
+        cursor.execute(
+            "INSERT INTO Customer (custId, custName, custPassword) VALUES (?, ?, ?)",
+            c.id, c.name, c.password
+        )
+
+    # sending Manager's data 
+    for c in managlist:
+        cursor.execute(
+            "INSERT INTO Manager (managId, managName, managPassword) VALUES (?, ?, ?)",
+            c.id, c.name, c.password
+        )
+
+    # sending Room's data 
+    for r in hms.Roomlist:
+        cursor.execute(
+            "INSERT INTO Room (roomId, roomType, isAvailable, custId) VALUES (?, ?, ?, ?)",
+            r.id, r.type, r.status, r.cust_id
+        )
+    
+    # sending Application's data 
+    for a in hms.Applications:
+        cursor.execute(
+            "INSERT INTO Applications (appId, custId, roomId, appStatus) VALUES (?, ?, ?, ?)",
+            a.app_id, a.cust_id, a.room_id, a.app_status
+        )
+
+    # sending Booking's data 
+    for a in hms.Bookings:
+        cursor.execute(
+            "INSERT INTO Bookings (bookingId, custId, roomId) VALUES (?, ?, ?)",
+            a.booking_id, a.cust_id, a.room_id
+        )
 ##### Main Function ########
+
+
+conection = get_connection()
+cursor = conection.cursor()
 
 choice = 0 
 temp= ""
@@ -295,6 +393,9 @@ cust = Customer()
 manag = Manager()
 hms = HMS()
 
+
+onLoad(cursor, custlist, managlist, hms)
+
 while(True):
     os.system("cls")
 
@@ -305,6 +406,7 @@ while(True):
     choice = int(input("Enter Choice: "))
 
     if choice == 0:
+        onExit(cursor, custlist, managlist, hms)
         exit()
     elif choice == 1:  ## manager login
         choice = login()

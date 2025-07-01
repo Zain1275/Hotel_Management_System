@@ -1,0 +1,38 @@
+use HMS;
+
+CREATE TABLE Room (
+     roomId INT primary key,
+     roomType VARCHAR(50),
+	 isAvailable bit, 
+	 custId int,
+	 foreign key (custId) references Customer(custId)
+);
+
+CREATE TABLE Customer (
+    custId INT primary key,
+    custName VARCHAR(50),
+	custPassword varchar(50)
+);
+
+CREATE TABLE Manager (
+    managId INT primary key,
+    managName VARCHAR(50),
+	managPassword varchar(50)
+);
+
+ create table Applications(
+	appId int primary key, 
+	custId int, 
+	roomId int,
+	appStatus bit,
+	foreign key (custId) references Customer(custId),
+	foreign key (roomId) references Room(roomId)
+);
+
+ create table Bookings(
+	bookingId int primary key, 
+	custId int, 
+	roomId int,
+	foreign key (custId) references Customer(custId),
+	foreign key (roomId) references Room(roomId)
+);
